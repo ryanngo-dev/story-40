@@ -15,10 +15,10 @@ export function WordChallengeCard({ words, validation = {} }: WordChallengeCardP
           return (
             <Card
               key={index}
-              className={`border-2 transition-all border-1 ${
+              className={`border-2 transition-all border-1 shadow-none ${
                 isUsed
                   ? 'border-green-500 bg-green-50 dark:bg-green-950'
-                  : 'border-primary/20 bg-stone-200/50'
+                  : 'border-primary/10 bg-stone-200/50'
               }`}
             >
               <CardContent className="p-4 text-center">
