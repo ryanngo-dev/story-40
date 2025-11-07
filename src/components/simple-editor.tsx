@@ -9,6 +9,7 @@ import { Mark, mergeAttributes } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { cn } from '@/lib/utils';
+import { validateWordInText } from '@/lib/validation';
 
 /**
  * Custom TipTap extension to highlight challenge words in real-time as the user types.
@@ -130,57 +131,54 @@ function findChallengeWords(doc: any, challengeWords: string[]): DecorationSet {
     }
 
     const text = node.text || '';
-    const lowerText = text.toLowerCase();
 
-    // Check each challenge word against this text node
-    challengeWords.forEach((word) => {
-      const lowerWord = word.toLowerCase();
-      let index = 0;
+    /**
+     * Split text into words and check each word against all challenge words.
+     * We split on word boundaries but keep separators to maintain accurate positions.
+     */
+    const words = text.split(/(\s+|[^\w]+)/); // Split but keep separators
+    let currentPos = 0;
 
-      // Find all occurrences of this word in the current text node
-      while (index < text.length) {
-        const foundIndex = lowerText.indexOf(lowerWord, index);
-        if (foundIndex === -1) break;
+    words.forEach((segment: string) => {
+      // Skip whitespace and punctuation segments
+      if (/^\s+$/.test(segment) || /^[^\w]+$/.test(segment)) {
+        currentPos += segment.length;
+        return;
+      }
+
+      /**
+       * Check if this word matches any of the challenge words using the same
+       * validation logic as the word challenge card (validateWordInText).
+       * This ensures consistent behavior between highlighting and validation.
+       *
+       * For example, if challenge word is "whisper":
+       * - "whispering", "whispered", "whispers" will all be highlighted
+       */
+      const shouldHighlight = challengeWords.some(challengeWord =>
+        validateWordInText(challengeWord, segment)
+      );
+
+      if (shouldHighlight) {
+        /**
+         * Calculate the absolute positions in the document.
+         * 'pos' is where this text node starts.
+         * 'currentPos' is the offset within this text node.
+         */
+        const from = pos + currentPos;
+        const to = from + segment.length;
 
         /**
-         * Verify this is a whole word match, not a partial match.
-         * For example, if the challenge word is "cat", we want to match "cat"
-         * but not "catch" or "scatter".
-         *
-         * We check the character before and after the match:
-         * - If it's the start/end of text, treat it as a word boundary (use space)
-         * - If it's a non-word character (\W), it's a word boundary
+         * Create an inline decoration that will visually highlight this entire word.
+         * The decoration is applied as a CSS class without modifying the document.
          */
-        const before = foundIndex > 0 ? text[foundIndex - 1] : ' ';
-        const after = foundIndex + lowerWord.length < text.length
-          ? text[foundIndex + lowerWord.length]
-          : ' ';
-
-        const isWordBoundary = /\W/.test(before) && /\W/.test(after);
-
-        if (isWordBoundary) {
-          /**
-           * Calculate the absolute positions in the document.
-           * 'pos' is where this text node starts.
-           * We add the foundIndex to get the absolute position of the match.
-           */
-          const from = pos + foundIndex;
-          const to = from + lowerWord.length;
-
-          /**
-           * Create an inline decoration that will visually highlight this range.
-           * The decoration is applied as a CSS class without modifying the document.
-           */
-          decorations.push(
-            Decoration.inline(from, to, {
-              class: 'bg-green-200 dark:bg-green-900/50 px-0.5 rounded',
-            })
-          );
-        }
-
-        // Move past this occurrence to find the next one
-        index = foundIndex + lowerWord.length;
+        decorations.push(
+          Decoration.inline(from, to, {
+            class: 'bg-green-200 dark:bg-green-900/50 px-0.5 rounded',
+          })
+        );
       }
+
+      currentPos += segment.length;
     });
   });
 
