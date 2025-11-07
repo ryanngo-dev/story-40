@@ -246,6 +246,7 @@ function HomeContent() {
             content={editorContent}
             onUpdate={handleEditorUpdate}
             placeholder="Write your story..."
+            challengeWords={challengeWords}
           />
         </div>
 
