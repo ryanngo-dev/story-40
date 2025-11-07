@@ -8,6 +8,7 @@ import { AlertWrapper, type AlertType } from '@/components/alert-wrapper';
 import { StreakDisplay } from '@/components/streak-display';
 import { WordChallengeCard } from '@/components/word-challenge-card';
 import { SimpleEditor } from '@/components/simple-editor';
+import { DailyCountdown } from '@/components/daily-countdown';
 import { getDailyWords, getRandomWords } from '@/lib/words';
 import { extractPlainText, validateAllWords } from '@/lib/validation';
 import { loadAppData, saveAppData } from '@/lib/storage';
@@ -281,6 +282,11 @@ function HomeContent() {
         {/* Info Text */}
         <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>Write daily to maintain your streak! 🔥</p>
+          {!isEditing && (
+            <div className="mt-2">
+              <DailyCountdown />
+            </div>
+          )}
         </div>
       </div>
 
