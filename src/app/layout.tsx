@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Story40",
-  description: "Write a daily story using three random words to build your streak",
+  description: "Write a daily story using three random words",
 };
 
 export default function RootLayout({
