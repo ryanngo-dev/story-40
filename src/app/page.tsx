@@ -8,7 +8,7 @@ import { AlertWrapper, type AlertType } from '@/components/alert-wrapper';
 import { StreakDisplay } from '@/components/streak-display';
 import { WordChallengeCard } from '@/components/word-challenge-card';
 import { SimpleEditor } from '@/components/simple-editor';
-import { getRandomWords } from '@/lib/words';
+import { getDailyWords, getRandomWords } from '@/lib/words';
 import { extractPlainText, validateAllWords } from '@/lib/validation';
 import { loadAppData, saveAppData } from '@/lib/storage';
 import { calculateStreak, getLastSubmissionDate } from '@/lib/streak';
@@ -72,12 +72,12 @@ function HomeContent() {
         setIsEditing(true);
         setEditingSubmissionId(submission.id);
       } else {
-        // Invalid edit ID, generate new words
-        setChallengeWords(getRandomWords());
+        // Invalid edit ID, generate daily words
+        setChallengeWords(getDailyWords());
       }
     } else {
-      // Generate new challenge words
-      setChallengeWords(getRandomWords());
+      // Generate daily challenge words
+      setChallengeWords(getDailyWords());
     }
   }, [editId]);
 
