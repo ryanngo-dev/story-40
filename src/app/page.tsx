@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ const DEFAULT_CONTENT: JSONContent = {
   ],
 };
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams?.get('edit');
@@ -292,5 +292,13 @@ export default function Home() {
         onConfirm={alertDialog.onConfirm}
       />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="flex-1" />}>
+      <HomeContent />
+    </Suspense>
   );
 }
