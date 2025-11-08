@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
+import type { DictionaryResponse } from './dictionary';
 
 /**
  * Extracts plain text from TipTap JSONContent
@@ -29,40 +30,73 @@ export function extractPlainText(content: JSONContent): string {
 }
 
 /**
- * Validates if a target word is present in the text
- * Uses case-insensitive matching - checks if the challenge word is contained in any word
+ * Validates if a challenge word is present in the text word
+ * Uses case-insensitive matching - checks if the text word contains the challenge word
  *
- * @param targetWord The word to search for
- * @param text The text to search in
- * @returns true if the word is found or contained in any word (e.g., "whisper" matches "whispering")
+ * @param textWord The word from the text to check
+ * @param challengeWord The challenge word to check for
+ * @returns true if the text word contains the challenge word
  */
-export function validateWordInText(targetWord: string, text: string): boolean {
-  const words = text.toLowerCase().split(/\s+/);
-  const targetLower = targetWord.toLowerCase();
+export function validateWordInText(
+  textWord: string,
+  challengeWord: string
+): boolean {
+  const cleanWord = textWord.toLowerCase().replace(/[^a-z]/g, ''); // Remove punctuation
+  const challengeLower = challengeWord.toLowerCase();
 
-  // Check if any word in the text contains the target word
-  return words.some(word => {
-    const cleanWord = word.replace(/[^a-z]/g, ''); // Remove punctuation
-    return cleanWord.includes(targetLower);
-  });
+  // Check if the text word contains the challenge word
+  return cleanWord.includes(challengeLower);
 }
 
 /**
  * Validates all challenge words against the provided text
+ * Uses simple text containment - checks if the text contains the challenge word
  *
- * @param challengeWords Array of words to validate
+ * @param challengeWords Array of base challenge words to validate
  * @param text The text to validate against
- * @returns Object mapping each word to its validation status
+ * @returns Object mapping each base word to its validation status
  */
 export function validateAllWords(
   challengeWords: string[],
   text: string
 ): { [word: string]: boolean } {
   const validation: { [word: string]: boolean } = {};
+  const words = text.toLowerCase().split(/\s+/);
 
   for (const word of challengeWords) {
-    validation[word] = validateWordInText(word, text);
+    // Check if any word in the text contains this challenge word
+    validation[word] = words.some(textWord => {
+      const cleanWord = textWord.replace(/[^a-z]/g, '');
+      return cleanWord.includes(word.toLowerCase());
+    });
   }
 
   return validation;
+}
+
+/**
+ * Extracts word forms from dictionary response data
+ *
+ * @param dictionaryData Dictionary response from API
+ * @returns Array of word form strings
+ */
+export function extractWordForms(
+  dictionaryData: DictionaryResponse | { error: string } | undefined
+): string[] {
+  if (!dictionaryData || 'error' in dictionaryData) {
+    return [];
+  }
+
+  const forms: string[] = [];
+
+  // Collect all forms from all entries
+  for (const entry of dictionaryData.entries) {
+    if (entry.forms) {
+      for (const form of entry.forms) {
+        forms.push(form.word);
+      }
+    }
+  }
+
+  return forms;
 }

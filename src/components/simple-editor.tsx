@@ -110,7 +110,10 @@ const ChallengeWordHighlight = Mark.create({
  * @param challengeWords - Array of challenge words to search for
  * @returns DecorationSet with all the highlights to apply
  */
-function findChallengeWords(doc: any, challengeWords: string[]): DecorationSet {
+function findChallengeWords(
+  doc: any,
+  challengeWords: string[]
+): DecorationSet {
   const decorations: Decoration[] = [];
 
   // Early return if no challenge words are provided
@@ -147,15 +150,11 @@ function findChallengeWords(doc: any, challengeWords: string[]): DecorationSet {
       }
 
       /**
-       * Check if this word matches any of the challenge words using the same
-       * validation logic as the word challenge card (validateWordInText).
-       * This ensures consistent behavior between highlighting and validation.
-       *
-       * For example, if challenge word is "whisper":
-       * - "whispering", "whispered", "whispers" will all be highlighted
+       * Check if this word contains any of the challenge words.
+       * Uses simple text containment - "whispering" will match "whisper", etc.
        */
       const shouldHighlight = challengeWords.some(challengeWord =>
-        validateWordInText(challengeWord, segment)
+        validateWordInText(segment, challengeWord)
       );
 
       if (shouldHighlight) {
@@ -206,9 +205,16 @@ interface SimpleEditorProps {
  * @param placeholder - Placeholder text shown when editor is empty
  * @param className - Additional CSS classes for the wrapper
  * @param showWordCount - Whether to display word count below editor
- * @param challengeWords - Array of words to highlight in the editor as user types
+ * @param challengeWords - Array of words to highlight
  */
-export function SimpleEditor({ content, onUpdate, placeholder, className, showWordCount = true, challengeWords = [] }: SimpleEditorProps) {
+export function SimpleEditor({
+  content,
+  onUpdate,
+  placeholder,
+  className,
+  showWordCount = true,
+  challengeWords = []
+}: SimpleEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -265,11 +271,24 @@ export function SimpleEditor({ content, onUpdate, placeholder, className, showWo
     }
   }, [content, editor]);
 
+  // Update challenge words when they change
+  useEffect(() => {
+    if (editor) {
+      editor.extensionManager.extensions.forEach((extension) => {
+        if (extension.name === 'challengeWordHighlight') {
+          extension.options.challengeWords = challengeWords;
+        }
+      });
+      // Force a re-render of decorations
+      editor.view.dispatch(editor.state.tr);
+    }
+  }, [editor, challengeWords]);
+
   const wordCount = editor?.storage.characterCount.words() || 0;
 
   return (
     <div className={cn(className)}>
-      <div className="rounded-lg border bg-background overflow-hidden">
+      <div className="rounded-lg border bg-background overflow-hidden shadow-sm border-1">
         <EditorContent editor={editor} />
       </div>
       {showWordCount && (

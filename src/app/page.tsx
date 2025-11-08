@@ -2,15 +2,18 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
 import { AlertWrapper, type AlertType } from '@/components/alert-wrapper';
 import { StreakDisplay } from '@/components/streak-display';
 import { WordChallengeCard } from '@/components/word-challenge-card';
+import { WordDefinitionDetail } from '@/components/word-definition-detail';
 import { SimpleEditor } from '@/components/simple-editor';
 import { DailyCountdown } from '@/components/daily-countdown';
 import { getDailyWords, getRandomWords } from '@/lib/words';
 import { extractPlainText, validateAllWords } from '@/lib/validation';
+import { fetchWordDefinition } from '@/lib/dictionary';
 import { loadAppData, saveAppData } from '@/lib/storage';
 import { calculateStreak, getLastSubmissionDate } from '@/lib/streak';
 import type { Submission } from '@/types';
@@ -42,11 +45,36 @@ function HomeContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [alertDialog, setAlertDialog] = useState<{
     open: boolean;
     type: AlertType;
     onConfirm?: () => void;
   }>({ open: false, type: 'newWords' });
+
+  // Fetch dictionary data for each word individually (better caching)
+  const word1Query = useQuery({
+    queryKey: ['dictionary', challengeWords[0]],
+    queryFn: () => fetchWordDefinition(challengeWords[0]),
+    enabled: !!challengeWords[0],
+    staleTime: Infinity,
+  });
+
+  const word2Query = useQuery({
+    queryKey: ['dictionary', challengeWords[1]],
+    queryFn: () => fetchWordDefinition(challengeWords[1]),
+    enabled: !!challengeWords[1],
+    staleTime: Infinity,
+  });
+
+  const word3Query = useQuery({
+    queryKey: ['dictionary', challengeWords[2]],
+    queryFn: () => fetchWordDefinition(challengeWords[2]),
+    enabled: !!challengeWords[2],
+    staleTime: Infinity,
+  });
+
+  const wordQueries = [word1Query, word2Query, word3Query];
 
   // Initialize on mount
   useEffect(() => {
@@ -226,11 +254,33 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* Challenge Words */}
-        <WordChallengeCard words={challengeWords} validation={wordValidation} />
+
+        <div className="space-y-4 mb-8">
+
+          {/* Challenge Words */}
+          <WordChallengeCard
+            words={challengeWords}
+            validation={wordValidation}
+            wordQueries={wordQueries}
+            selectedWord={selectedWord}
+            onWordSelect={setSelectedWord}
+          />
+
+          {/* Word Definition Detail */}
+          {selectedWord && (() => {
+            const selectedWordIndex = challengeWords.indexOf(selectedWord);
+            const selectedWordData = selectedWordIndex >= 0 ? wordQueries[selectedWordIndex].data : undefined;
+            return selectedWordData ? (
+              <WordDefinitionDetail
+                data={selectedWordData}
+                onClose={() => setSelectedWord(null)}
+              />
+            ) : null;
+          })()}
+        </div>
 
         {/* Title Input */}
-        <div className="mb-4">
+        <div className="mb-2">
           <SimpleEditor
             content={titleContent}
             onUpdate={handleTitleUpdate}

@@ -18,3 +18,13 @@ export interface AppData {
   currentStreak: number;
   lastSubmissionDate: string;
 }
+
+// Re-export dictionary types for convenience
+export type {
+  DictionaryResponse,
+  DictionaryEntry,
+  WordMetadata,
+  WordForm,
+  Sense,
+  Pronunciation,
+} from '@/lib/dictionary';
