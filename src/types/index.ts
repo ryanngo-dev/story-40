@@ -23,7 +23,6 @@ export interface AppData {
 export type {
   DictionaryResponse,
   DictionaryEntry,
-  WordMetadata,
   WordForm,
   Sense,
   Pronunciation,
