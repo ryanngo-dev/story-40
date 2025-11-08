@@ -309,7 +309,7 @@ function HomeContent() {
         </div>
 
         {/* Title Input */}
-        <div className="mb-2">
+        <div className="mb-4">
           <SimpleEditor
             content={titleContent}
             onUpdate={handleTitleUpdate}

@@ -36,11 +36,11 @@ function WordCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll into view when active
-  // useEffect(() => {
-  //   if (isActive && cardRef.current) {
-  //     cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  //   }
-  // }, [isActive]);
+  useEffect(() => {
+    if (isActive && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isActive]);
 
   const hasData = data && 'entries' in data;
 
@@ -52,7 +52,7 @@ function WordCard({
   return (
     <Card
       ref={cardRef}
-      className={`border-2 transition-all border-1 shadow-none cursor-pointer ${
+      className={`border-2 transition-all border-1 shadow-none cursor-pointer scroll-mt-22 ${
         isUsed
           ? 'border-green-500 bg-green-50 dark:bg-green-950'
           : 'border-primary/10 bg-stone-200/50'
