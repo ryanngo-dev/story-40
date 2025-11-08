@@ -112,3 +112,25 @@ export function getLastSubmissionDate(submissions: Submission[]): string {
 
   return formatDate(new Date(sorted[0].createdAt));
 }
+
+/**
+ * Checks if there's a submission for today
+ * @param submissions Array of all submissions
+ * @returns true if at least one submission exists for today
+ */
+export function hasSubmissionToday(submissions: Submission[]): boolean {
+  if (submissions.length === 0) {
+    return false;
+  }
+
+  const today = getToday();
+
+  for (const submission of submissions) {
+    const submissionDate = formatDate(new Date(submission.createdAt));
+    if (submissionDate === today) {
+      return true;
+    }
+  }
+
+  return false;
+}

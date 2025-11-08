@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
@@ -12,10 +12,10 @@ import { WordDefinitionDetail } from '@/components/word-definition-detail';
 import { SimpleEditor } from '@/components/simple-editor';
 import { DailyCountdown } from '@/components/daily-countdown';
 import { getDailyWords, getRandomWords } from '@/lib/words';
-import { extractPlainText, validateAllWords } from '@/lib/validation';
+import { extractPlainText, validateAllWords, extractWordForms } from '@/lib/validation';
 import { fetchWordDefinition } from '@/lib/dictionary';
 import { loadAppData, saveAppData } from '@/lib/storage';
-import { calculateStreak, getLastSubmissionDate } from '@/lib/streak';
+import { calculateStreak, getLastSubmissionDate, hasSubmissionToday } from '@/lib/streak';
 import type { Submission } from '@/types';
 
 // Default editor content
@@ -42,6 +42,7 @@ function HomeContent() {
   const [wordCount, setWordCount] = useState(0);
   const [wordValidation, setWordValidation] = useState<{ [word: string]: boolean }>({});
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [hasCompletedToday, setHasCompletedToday] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -76,6 +77,30 @@ function HomeContent() {
 
   const wordQueries = [word1Query, word2Query, word3Query];
 
+  // Check if all queries have completed loading
+  const allQueriesLoaded = wordQueries.every(query =>
+    !query.isLoading && (query.data !== undefined)
+  );
+
+  // Build word forms map from dictionary data using useMemo
+  const wordFormsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+
+    if (challengeWords.length > 0) {
+      challengeWords.forEach((word, index) => {
+        const queryData = wordQueries[index]?.data;
+        // Only add if query has loaded and has valid data
+        if (queryData && !('error' in queryData)) {
+          const forms = extractWordForms(queryData);
+          // Combine base word with its forms
+          map.set(word, [word, ...forms]);
+        }
+      });
+    }
+
+    return map;
+  }, [challengeWords, word1Query.data, word2Query.data, word3Query.data]);
+
   // Initialize on mount
   useEffect(() => {
     setMounted(true);
@@ -83,7 +108,9 @@ function HomeContent() {
     // Load app data and calculate streak
     const appData = loadAppData();
     const streak = calculateStreak(appData.submissions);
+    const completedToday = hasSubmissionToday(appData.submissions);
     setCurrentStreak(streak);
+    setHasCompletedToday(completedToday);
 
     // Check if we're editing an existing submission
     if (editId) {
@@ -113,7 +140,7 @@ function HomeContent() {
   // Update word validation when content changes
   useEffect(() => {
     if (challengeWords.length > 0 && plainText) {
-      const validation = validateAllWords(challengeWords, plainText);
+      const validation = validateAllWords(challengeWords, plainText, wordFormsMap);
       setWordValidation(validation);
     } else if (challengeWords.length > 0) {
       // Initialize validation to false for all words
@@ -123,7 +150,7 @@ function HomeContent() {
       });
       setWordValidation(validation);
     }
-  }, [plainText, challengeWords]);
+  }, [plainText, challengeWords, wordFormsMap]);
 
   const handleTitleUpdate = (editor: Editor) => {
     const json = editor.getJSON();
@@ -177,9 +204,11 @@ function HomeContent() {
 
       // Update streak
       const newStreak = calculateStreak(appData.submissions);
+      const completedToday = hasSubmissionToday(appData.submissions);
       appData.currentStreak = newStreak;
       appData.lastSubmissionDate = getLastSubmissionDate(appData.submissions);
       setCurrentStreak(newStreak);
+      setHasCompletedToday(completedToday);
     }
 
     // Save to localStorage
@@ -250,7 +279,7 @@ function HomeContent() {
             </p>
           </div>
           <div className="flex-shrink-0 ml-4 mt-1">
-            <StreakDisplay streak={currentStreak} />
+            <StreakDisplay streak={currentStreak} hasCompletedToday={hasCompletedToday} />
           </div>
         </div>
 
@@ -292,12 +321,19 @@ function HomeContent() {
 
         {/* Editor */}
         <div className="mb-6">
-          <SimpleEditor
-            content={editorContent}
-            onUpdate={handleEditorUpdate}
-            placeholder="Write your story..."
-            challengeWords={challengeWords}
-          />
+          {allQueriesLoaded ? (
+            <SimpleEditor
+              content={editorContent}
+              onUpdate={handleEditorUpdate}
+              placeholder="Write your story..."
+              challengeWords={challengeWords}
+              wordFormsMap={wordFormsMap}
+            />
+          ) : (
+            <div className="rounded-lg border bg-background overflow-hidden shadow-sm border-1 min-h-[300px] flex items-center justify-center">
+              <p className="text-muted-foreground">Loading word forms...</p>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -333,11 +369,9 @@ function HomeContent() {
         {/* Info Text */}
         <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>Write daily to maintain your streak! 🔥</p>
-          {!isEditing && (
-            <div className="mt-2">
-              <DailyCountdown />
-            </div>
-          )}
+          <div className="mt-2">
+            <DailyCountdown />
+          </div>
         </div>
       </div>
 

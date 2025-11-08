@@ -28,11 +28,12 @@ const ChallengeWordHighlight = Mark.create({
 
   /**
    * Define the options that can be passed to this extension.
-   * We accept an array of challenge words that should be highlighted.
+   * We accept an array of challenge words and a word forms map.
    */
   addOptions() {
     return {
       challengeWords: [] as string[],
+      wordFormsMap: new Map<string, string[]>(),
     };
   },
 
@@ -65,6 +66,7 @@ const ChallengeWordHighlight = Mark.create({
    */
   addProseMirrorPlugins() {
     const challengeWords = this.options.challengeWords as string[];
+    const wordFormsMap = this.options.wordFormsMap as Map<string, string[]>;
 
     return [
       new Plugin({
@@ -75,7 +77,7 @@ const ChallengeWordHighlight = Mark.create({
            * Returns a DecorationSet containing all the highlights to be rendered.
            */
           init(_, { doc }) {
-            return findChallengeWords(doc, challengeWords);
+            return findChallengeWords(doc, challengeWords, wordFormsMap);
           },
           /**
            * Update the plugin state when the document changes.
@@ -84,7 +86,7 @@ const ChallengeWordHighlight = Mark.create({
            */
           apply(transaction, oldState) {
             return transaction.docChanged
-              ? findChallengeWords(transaction.doc, challengeWords)
+              ? findChallengeWords(transaction.doc, challengeWords, wordFormsMap)
               : oldState;
           },
         },
@@ -108,11 +110,13 @@ const ChallengeWordHighlight = Mark.create({
  *
  * @param doc - The ProseMirror document to scan
  * @param challengeWords - Array of challenge words to search for
+ * @param wordFormsMap - Map of base word to allowed words (base + forms)
  * @returns DecorationSet with all the highlights to apply
  */
 function findChallengeWords(
   doc: any,
-  challengeWords: string[]
+  challengeWords: string[],
+  wordFormsMap: Map<string, string[]>
 ): DecorationSet {
   const decorations: Decoration[] = [];
 
@@ -150,12 +154,13 @@ function findChallengeWords(
       }
 
       /**
-       * Check if this word contains any of the challenge words.
-       * Uses simple text containment - "whispering" will match "whisper", etc.
+       * Check if this word matches any of the challenge words or their forms.
+       * Uses exact matching against allowed words (base word + word forms).
        */
-      const shouldHighlight = challengeWords.some(challengeWord =>
-        validateWordInText(segment, challengeWord)
-      );
+      const shouldHighlight = challengeWords.some(challengeWord => {
+        const allowedWords = wordFormsMap.get(challengeWord) || [challengeWord];
+        return validateWordInText(segment, allowedWords);
+      });
 
       if (shouldHighlight) {
         /**
@@ -195,6 +200,7 @@ interface SimpleEditorProps {
   className?: string;
   showWordCount?: boolean;
   challengeWords?: string[];
+  wordFormsMap?: Map<string, string[]>;
 }
 
 /**
@@ -206,6 +212,7 @@ interface SimpleEditorProps {
  * @param className - Additional CSS classes for the wrapper
  * @param showWordCount - Whether to display word count below editor
  * @param challengeWords - Array of words to highlight
+ * @param wordFormsMap - Map of base word to allowed words (base + forms)
  */
 export function SimpleEditor({
   content,
@@ -213,7 +220,8 @@ export function SimpleEditor({
   placeholder,
   className,
   showWordCount = true,
-  challengeWords = []
+  challengeWords = [],
+  wordFormsMap = new Map()
 }: SimpleEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -242,6 +250,7 @@ export function SimpleEditor({
       // Add our custom extension that highlights challenge words
       ChallengeWordHighlight.configure({
         challengeWords,
+        wordFormsMap,
       }),
     ],
     content,
@@ -270,19 +279,6 @@ export function SimpleEditor({
       editor.commands.setContent(content);
     }
   }, [content, editor]);
-
-  // Update challenge words when they change
-  useEffect(() => {
-    if (editor) {
-      editor.extensionManager.extensions.forEach((extension) => {
-        if (extension.name === 'challengeWordHighlight') {
-          extension.options.challengeWords = challengeWords;
-        }
-      });
-      // Force a re-render of decorations
-      editor.view.dispatch(editor.state.tr);
-    }
-  }, [editor, challengeWords]);
 
   const wordCount = editor?.storage.characterCount.words() || 0;
 

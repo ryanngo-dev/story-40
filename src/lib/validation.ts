@@ -30,45 +30,48 @@ export function extractPlainText(content: JSONContent): string {
 }
 
 /**
- * Validates if a challenge word is present in the text word
- * Uses case-insensitive matching - checks if the text word contains the challenge word
+ * Validates if a word from the text matches any of the allowed words (base word + word forms)
+ * Uses exact matching after cleaning
  *
  * @param textWord The word from the text to check
- * @param challengeWord The challenge word to check for
- * @returns true if the text word contains the challenge word
+ * @param allowedWords Array of allowed words (base word + all word forms)
+ * @returns true if the cleaned text word exactly matches any allowed word
  */
 export function validateWordInText(
   textWord: string,
-  challengeWord: string
+  allowedWords: string[]
 ): boolean {
   const cleanWord = textWord.toLowerCase().replace(/[^a-z]/g, ''); // Remove punctuation
-  const challengeLower = challengeWord.toLowerCase();
 
-  // Check if the text word contains the challenge word
-  return cleanWord.includes(challengeLower);
+  // Check if the cleaned word exactly matches any allowed word
+  return allowedWords.some(allowed => cleanWord === allowed.toLowerCase());
 }
 
 /**
  * Validates all challenge words against the provided text
- * Uses simple text containment - checks if the text contains the challenge word
+ * Uses exact matching against base word and all word forms
  *
  * @param challengeWords Array of base challenge words to validate
  * @param text The text to validate against
+ * @param wordFormsMap Map of base word to array of allowed words (base + forms)
  * @returns Object mapping each base word to its validation status
  */
 export function validateAllWords(
   challengeWords: string[],
-  text: string
+  text: string,
+  wordFormsMap: Map<string, string[]> = new Map()
 ): { [word: string]: boolean } {
   const validation: { [word: string]: boolean } = {};
   const words = text.toLowerCase().split(/\s+/);
 
   for (const word of challengeWords) {
-    // Check if any word in the text contains this challenge word
-    validation[word] = words.some(textWord => {
-      const cleanWord = textWord.replace(/[^a-z]/g, '');
-      return cleanWord.includes(word.toLowerCase());
-    });
+    // Get allowed words (base + forms), default to just the base word if no forms available
+    const allowedWords = wordFormsMap.get(word) || [word];
+
+    // Check if any word in the text exactly matches any allowed word
+    validation[word] = words.some(textWord =>
+      validateWordInText(textWord, allowedWords)
+    );
   }
 
   return validation;

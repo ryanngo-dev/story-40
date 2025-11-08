@@ -7,7 +7,7 @@ import { AlertWrapper } from '@/components/alert-wrapper';
 import { SubmissionCard } from '@/components/submission-card';
 import { StreakDisplay } from '@/components/streak-display';
 import { loadAppData, saveAppData } from '@/lib/storage';
-import { calculateStreak } from '@/lib/streak';
+import { calculateStreak, hasSubmissionToday } from '@/lib/streak';
 import type { Submission } from '@/types';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -16,6 +16,7 @@ export default function HistoryPage() {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [hasCompletedToday, setHasCompletedToday] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -38,6 +39,7 @@ export default function HistoryPage() {
 
     setSubmissions(sortedSubmissions);
     setCurrentStreak(calculateStreak(appData.submissions));
+    setHasCompletedToday(hasSubmissionToday(appData.submissions));
   };
 
   const handleEdit = (id: string) => {
@@ -91,7 +93,7 @@ export default function HistoryPage() {
             </p>
           </div>
           <div className="flex-shrink-0 ml-4 mt-1">
-            <StreakDisplay streak={currentStreak} />
+            <StreakDisplay streak={currentStreak} hasCompletedToday={hasCompletedToday} />
           </div>
         </div>
 
