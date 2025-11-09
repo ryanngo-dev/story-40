@@ -53,11 +53,11 @@ export function FeedbackWidget() {
       {/* Floating button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-primary text-primary-foreground rounded-full p-2.5 md:p-4 shadow-lg hover:scale-110 transition-transform z-50"
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-primary text-primary-foreground rounded-full p-3.5 md:p-4 shadow-lg hover:scale-110 transition-transform z-50"
         aria-label="Send feedback"
       >
         <div className="flex items-center gap-2">
-        <MessageSquare className="size-2 md:size-5" />
+        <MessageSquare className="size-4 md:size-5" />
         <span className="hidden md:inline">Feedback</span>
         </div>
 
