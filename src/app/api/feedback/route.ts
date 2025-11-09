@@ -22,21 +22,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the Discord message
-    let discordMessage = `**New Feedback from Story40**\n\n`;
+    let discordMessage = ``;
 
-    if (name) {
-      discordMessage += `**Name:** ${name}\n`;
+    // Add "Message from {name} - {email}" if provided, otherwise "anonymous"
+    const fromParts = [];
+    if (name) fromParts.push(name);
+    if (email) fromParts.push(email);
+
+    if (fromParts.length > 0) {
+      discordMessage += `**Message from ${fromParts.join(' - ')}**\n\n`;
+    } else {
+      discordMessage += `**Message from anonymous**\n\n`;
     }
 
-    if (email) {
-      discordMessage += `**Email:** ${email}\n`;
-    }
-
-    if (name || email) {
-      discordMessage += `\n`;
-    }
-
-    discordMessage += `**Message:**\n${message}`;
+    discordMessage += `${message}\n\n`;
+    discordMessage += `-# *${new Date().toLocaleString()}*`;
 
     // Send to Discord webhook
     const response = await fetch(webhookUrl, {

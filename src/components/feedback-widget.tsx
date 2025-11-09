@@ -103,6 +103,12 @@ export function FeedbackWidget() {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
               placeholder="Share your thoughts, report a bug, suggest a feature or just say hi!"
               className="w-full h-24 md:h-32 p-2 md:p-3 text-sm border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
               disabled={isSubmitting}
@@ -110,13 +116,13 @@ export function FeedbackWidget() {
             />
 
             {status === "success" && (
-              <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+              <p className="text-sm text-green-600 dark:text-green-400">
                 Feedback sent successfully!
               </p>
             )}
 
             {status === "error" && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+              <p className="text-sm text-red-600 dark:text-red-400">
                 Failed to send feedback. Please try again.
               </p>
             )}
