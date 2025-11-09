@@ -358,7 +358,7 @@ function HomeContent() {
           ) : (
             <Button
               onClick={handleGetNewWords}
-              variant="secondary"
+              variant="outline"
               size="lg"
             >
               Get New Words
