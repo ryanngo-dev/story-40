@@ -56,14 +56,18 @@ export function FeedbackWidget() {
         className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-primary text-primary-foreground rounded-full p-2.5 md:p-4 shadow-lg hover:scale-110 transition-transform z-50"
         aria-label="Send feedback"
       >
-        <MessageSquare className="size-4 md:size-6" />
+        <div className="flex items-center gap-2">
+        <MessageSquare className="size-2 md:size-5" />
+        <span className="hidden md:inline">Feedback</span>
+        </div>
+
       </button>
 
       {/* Feedback modal */}
       {isOpen && (
         <div className="fixed inset-x-4 bottom-4 md:bottom-6 md:right-6 md:left-auto bg-background border rounded-lg shadow-xl md:w-80 z-50 dark:bg-gray-900">
           <div className="flex items-center justify-between p-3 md:p-4 border-b">
-            <h3 className="font-semibold text-sm md:text-base">Send Feedback to Ryan</h3>
+            <h3 className="font-semibold text-sm md:text-base">Send a message to Ryan</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="text-muted-foreground hover:text-foreground"
@@ -123,7 +127,7 @@ export function FeedbackWidget() {
               disabled={isSubmitting || !message.trim()}
             >
               <Send className="size-4" />
-              {isSubmitting ? "Sending..." : "Send Feedback"}
+              {isSubmitting ? "Sending..." : "Send"}
             </Button>
           </form>
         </div>

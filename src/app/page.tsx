@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { AlertWrapper, type AlertType } from '@/components/alert-wrapper';
 import { StreakDisplay } from '@/components/streak-display';
 import { WordChallengeCard } from '@/components/word-challenge-card';
@@ -337,15 +343,28 @@ function HomeContent() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 justify-center">
-          <Button
-            onClick={handleSaveStory}
-            size="lg"
-            className="min-w-[200px]"
-            disabled={wordCount < 40}
-          >
-            {isEditing ? 'Save Changes' : 'Save Story'}
-          </Button>
+        <div className="flex gap-4 justify-center flex-col">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    onClick={handleSaveStory}
+                    size="lg"
+                    disabled={wordCount < 40}
+                    className="w-full"
+                  >
+                    {isEditing ? 'Save Changes' : 'Save Story'}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {wordCount < 40 && (
+                <TooltipContent>
+                  <p  className="pb-[0.5]">Your story must be at least 40 words long!</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
 
           {isEditing ? (
             <Button
@@ -360,6 +379,7 @@ function HomeContent() {
               onClick={handleGetNewWords}
               variant="outline"
               size="lg"
+              className="bg-stone-100 border-none shadow-none hover:text-primary hover:bg-stone-200"
             >
               Get New Words
             </Button>
